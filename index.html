@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MACHIKOTO - ひろば</title>
+    <link rel="icon" type="image/png" href="gazo/favicon.png">
+    <link rel="canonical" href="https://hiroba.japan-vi.be/index">
+    <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+
+    <header>
+        <div id="nav-bar">
+            <a href="https://wahoo.japan-vi.be" id="nav-logo">
+                <img src="gazo/logo.svg" alt="MACHIKOTO - ひろば" id="logo"
+                    onerror="this.style.display='none';document.getElementById('appTitle').style.display='flex'">
+            </a>
+
+            <a href="index.html" id="nav-logo">
+                <img id="appTitle" id="logo"
+                    onerror="this.style.display='none';document.getElementById('appTitle').style.display='flex'">
+                <span class="brand-title">ひろば</span>
+            </a>
+        </div>
+        <div class="url-bar" id="urlDisplay">hiroba.japan-vi.be/</div>
+    </header>
+
+    <main>
+        <section id="gatewayScreen" class="screen active">
+            <div class="gateway-grid">
+                <div class="gateway-card">
+                    <div id="loginFormBlock">
+                        <h2>MACHIKOTO - ひろば アカウントにログイン</h2>
+                        <form onsubmit="App.handleLogin(event)">
+                            <div class="form-group">
+                                <label for="loginId">ID</label>
+                                <input type="text" id="loginId" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="loginPassword">パスワード</label>
+                                <input type="password" id="loginPassword" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-blue">ログイン</button>
+                        </form>
+                        <span class="toggle-link" onclick="App.toggleRegisterView(true)">新規登録はこちら</span>
+                    </div>
+
+                    <div id="registerFormBlock" style="display: none;">
+                        <h2>管理者 新規登録</h2>
+                        <form onsubmit="App.handleRegister(event)">
+                            <div class="form-group">
+                                <label for="regId">カスタムID</label>
+                                <input type="text" id="regId" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="regPassword">パスワード</label>
+                                <input type="password" id="regPassword" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="regName">名前を入力してください (例 : 市町村、プロジェクト、県など)</label>
+                                <input type="text" id="regName" class="form-control" placeholder="例 : ワフー" required>
+                            </div>
+                            <button type="submit" class="btn btn-green">アカウントを作成</button>
+                        </form>
+                        <span class="toggle-link" onclick="App.toggleRegisterView(false)">ログイン画面に戻る</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="boardScreen" class="screen">
+            <div class="board-controls">
+                <button class="btn btn-green" id="addCardBtn" style="max-width: 200px;" onclick="App.openCardModal()">＋ カード追加</button>
+                <button class="btn btn-blue" id="switchRoleBtn" style="max-width: 220px;" onclick="App.switchToGateway()">トップ画面へ戻る</button>
+            </div>
+
+            <div class="corkboard-container" id="corkboard"></div>
+
+            <div class="account" id="adminaccountActions">
+                <button class="btn btn-danger" onclick="App.clearAllCards()">すべてのカードを消去</button>
+                <button class="btn btn-danger" onclick="App.deleteAccount()">アカウントを削除</button>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="cardModal">
+        <div class="modal-content">
+            <div class="modal-title">新しいカードを追加</div>
+            <form onsubmit="App.handleSaveCard(event)">
+                <div class="form-group">
+                    <label for="cardText">メッセージ内容</label>
+                    <textarea id="cardText" class="form-control" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="cardImageUrl">画像のURLリンク（任意）</label>
+                    <input type="url" id="cardImageUrl" class="form-control" placeholder="https://example.com/image.jpg">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="App.closeCardModal()">キャンセル</button>
+                    <button type="submit" class="btn btn-green">追加する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="viewModal">
+        <div class="modal-content">
+            <div class="modal-title">カードの詳細</div>
+            <div id="viewModalContent"></div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button type="button" class="btn btn-blue" onclick="App.closeViewModal()">閉じる</button>
+            </div>
+        </div>
+    </div>
+      
+    <footer id="footer">
+        <span id="f-left" data-t="footerLeft">2025 - 2026 © MACHIKOTO - ひろば — あなたのプライバシーを尊重します。いつでもデフォルトに戻せます。詳細はこちら：</span>
+        <span></span>
+        <a href="https://help.japan-vi.be" id="f-right" data-t="footerRight">❓ヘルプ</a>
+    </footer>
+</div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
