@@ -56,8 +56,8 @@ const App = {
 
     init() {
         this.bindEvents();
-        this.render();
         this.checkUrlParams();
+        this.render();
     },
 
     async checkUrlParams() {
@@ -495,7 +495,7 @@ const App = {
         newX = Math.max(0, Math.min(newX, boardRect.width - 220));
         newY = Math.max(0, Math.min(newY, boardRect.height - 100));
 
-        const cardElem = corkboard.querySelector(`[data-id="${this.state.draggedCardId}"]`);
+        const cardElem = corkboard.querySelector('[data-id="' + this.state.draggedCardId + '"]');
         if (cardElem) {
             cardElem.style.left = `${newX}px`;
             cardElem.style.top = `${newY}px`;
