@@ -56,6 +56,7 @@ const App = {
 
     init() {
         this.bindEvents();
+        this.render();
         this.checkUrlParams();
     },
 
@@ -386,7 +387,7 @@ const App = {
 
         if (name) {
             titleElem.textContent = ` MACHIKOTO - ひろば ${name}`;
-            urlElem.textContent = `hiroba.japan-vi.be/?board=${encodeURIComponent(this.state.activeBoardUserId || name)}`;
+            urlElem.textContent = `hiroba.japan-vi.be/index.html?board=${encodeURIComponent(this.state.currentUser.managerId)}`;
         } else {
             titleElem.textContent = "ひろば";
             urlElem.textContent = "hiroba.japan-vi.be/";
