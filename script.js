@@ -46,7 +46,7 @@ const App = {
         currentUser: null,
         activeBoardUserId: null,
         cards: [],
-        managers: {},
+        managers: JSON.parse(localStorage.getItem("machikoto_managers") || "{}"),
         isManager: false,
         isReadOnly: false,
         draggedCardId: null,
@@ -55,9 +55,18 @@ const App = {
     },
 
     init() {
+        window.App = this; // S'assurer que l'objet est disponible globalement tout de suite
         this.bindEvents();
         this.checkUrlParams();
         this.render();
+    },
+
+    saveLocalManagers() {
+        try {
+            localStorage.setItem("machikoto_managers", JSON.stringify(this.state.managers));
+        } catch (e) {
+            console.warn("LocalStorage save warning:", e);
+        }
     },
 
     async checkUrlParams() {
@@ -79,6 +88,10 @@ const App = {
                 } catch (e) {
                     console.warn("Manager load warning:", e);
                 }
+            } else {
+                if (this.state.managers[boardUserId]) {
+                    managerName = this.state.managers[boardUserId].name || boardUserId;
+                }
             }
 
             this.state.currentUser = { docId: boardUserId, managerId: boardUserId, name: managerName };
@@ -91,26 +104,37 @@ const App = {
     },
 
     subscribeToRealtimeCards(userId) {
-        if (!db || !userId) return;
+        if (!userId) return;
+        
         if (this.state.unsubscribeCards) {
             this.state.unsubscribeCards();
+            this.state.unsubscribeCards = null;
         }
 
-        const postsRef = collection(db, "managers", userId, "posts");
-        this.state.unsubscribeCards = onSnapshot(postsRef, (snapshot) => {
-            this.state.cards = [];
-            snapshot.forEach((docSnap) => {
-                this.state.cards.push({
-                    id: docSnap.id,
-                    ...docSnap.data()
+        if (db) {
+            const postsRef = collection(db, "managers", userId, "posts");
+            this.state.unsubscribeCards = onSnapshot(postsRef, (snapshot) => {
+                this.state.cards = [];
+                snapshot.forEach((docSnap) => {
+                    this.state.cards.push({
+                        id: docSnap.id,
+                        ...docSnap.data()
+                    });
                 });
+                if (document.getElementById("boardScreen").classList.contains("active")) {
+                    this.renderBoard();
+                }
+            }, (error) => {
+                console.error("Firestore sync error:", error);
             });
+        } else {
+            // Mode local de secours
+            const localCardsKey = `machikoto_cards_${userId}`;
+            this.state.cards = JSON.parse(localStorage.getItem(localCardsKey) || "[]");
             if (document.getElementById("boardScreen").classList.contains("active")) {
                 this.renderBoard();
             }
-        }, (error) => {
-            console.error("Firestore sync error:", error);
-        });
+        }
     },
 
     async handleRegister(e) {
@@ -150,6 +174,7 @@ const App = {
                     password: password,
                     name: name
                 };
+                this.saveLocalManagers();
             }
 
             alert("アカウントが正常に作成されました。ログインしてください。");
@@ -212,9 +237,7 @@ const App = {
             this.state.isManager = true;
             this.state.isReadOnly = false;
             
-            if (db) {
-                this.subscribeToRealtimeCards(managerData.docId);
-            }
+            this.subscribeToRealtimeCards(managerData.docId);
 
             this.render();
             this.switchToBoard();
@@ -256,6 +279,7 @@ const App = {
                     y: defaultY
                 };
                 this.state.cards.push(newCard);
+                localStorage.setItem(`machikoto_cards_${this.state.activeBoardUserId}`, JSON.stringify(this.state.cards));
                 this.renderBoard();
             }
             this.closeCardModal();
@@ -266,7 +290,7 @@ const App = {
     },
 
     async deleteCard(id, e) {
-        e.stopPropagation();
+        if (e) e.stopPropagation();
         if (!this.state.isManager || !this.state.activeBoardUserId) return;
 
         try {
@@ -274,6 +298,7 @@ const App = {
                 await deleteDoc(doc(db, "managers", this.state.activeBoardUserId, "posts", id));
             } else {
                 this.state.cards = this.state.cards.filter(c => c.id !== id);
+                localStorage.setItem(`machikoto_cards_${this.state.activeBoardUserId}`, JSON.stringify(this.state.cards));
                 this.renderBoard();
             }
         } catch (error) {
@@ -294,6 +319,7 @@ const App = {
                     await Promise.all(promises);
                 } else {
                     this.state.cards = [];
+                    localStorage.setItem(`machikoto_cards_${this.state.activeBoardUserId}`, JSON.stringify(this.state.cards));
                     this.renderBoard();
                 }
             } catch (error) {
@@ -316,6 +342,8 @@ const App = {
                     await deleteDoc(doc(db, "managers", this.state.currentUser.docId));
                 } else {
                     delete this.state.managers[this.state.currentUser.managerId];
+                    this.saveLocalManagers();
+                    localStorage.removeItem(`machikoto_cards_${this.state.currentUser.managerId}`);
                 }
                 this.switchToGateway();
             } catch (error) {
@@ -326,10 +354,14 @@ const App = {
     },
 
     async updateCardPositionInFirestore(id, x, y) {
-        if (!db || !this.state.isManager || !this.state.activeBoardUserId) return;
+        if (!this.state.isManager || !this.state.activeBoardUserId) return;
         try {
-            const cardRef = doc(db, "managers", this.state.activeBoardUserId, "posts", id);
-            await updateDoc(cardRef, { x: x, y: y });
+            if (db) {
+                const cardRef = doc(db, "managers", this.state.activeBoardUserId, "posts", id);
+                await updateDoc(cardRef, { x: x, y: y });
+            } else {
+                localStorage.setItem(`machikoto_cards_${this.state.activeBoardUserId}`, JSON.stringify(this.state.cards));
+            }
         } catch (error) {
             console.error("Position update error:", error);
         }
@@ -337,6 +369,7 @@ const App = {
 
     bindEvents() {
         const corkboard = document.getElementById("corkboard");
+        if (!corkboard) return;
 
         corkboard.addEventListener("mousedown", (e) => this.handleDragStart(e));
         document.addEventListener("mousemove", (e) => this.handleDragMove(e));
@@ -348,8 +381,12 @@ const App = {
     },
 
     toggleRegisterView(isRegister) {
-        document.getElementById("loginFormBlock").style.display = isRegister ? "none" : "block";
-        document.getElementById("registerFormBlock").style.display = isRegister ? "block" : "none";
+        const loginBlock = document.getElementById("loginFormBlock");
+        const registerBlock = document.getElementById("registerFormBlock");
+        if (loginBlock && registerBlock) {
+            loginBlock.style.display = isRegister ? "none" : "block";
+            registerBlock.style.display = isRegister ? "block" : "none";
+        }
     },
 
     switchToGateway() {
@@ -370,13 +407,17 @@ const App = {
 
         this.render();
 
-        document.getElementById("gatewayScreen").classList.add("active");
-        document.getElementById("boardScreen").classList.remove("active");
+        const gatewayScreen = document.getElementById("gatewayScreen");
+        const boardScreen = document.getElementById("boardScreen");
+        if (gatewayScreen) gatewayScreen.classList.add("active");
+        if (boardScreen) boardScreen.classList.remove("active");
     },
 
     switchToBoard() {
-        document.getElementById("gatewayScreen").classList.remove("active");
-        document.getElementById("boardScreen").classList.add("active");
+        const gatewayScreen = document.getElementById("gatewayScreen");
+        const boardScreen = document.getElementById("boardScreen");
+        if (gatewayScreen) gatewayScreen.classList.remove("active");
+        if (boardScreen) boardScreen.classList.add("active");
         this.renderBoard();
     },
 
@@ -385,31 +426,36 @@ const App = {
         const titleElem = document.getElementById("appTitle");
         const urlElem = document.getElementById("urlDisplay");
 
-        if (name) {
-            titleElem.textContent = ` MACHIKOTO - ひろば ${name}`;
-            urlElem.textContent = `hiroba.japan-vi.be/index.html?board=${encodeURIComponent(this.state.currentUser.managerId)}`;
-        } else {
-            titleElem.textContent = "ひろば";
-            urlElem.textContent = "hiroba.japan-vi.be/";
+        if (titleElem && urlElem) {
+            if (name) {
+                titleElem.textContent = ` MACHIKOTO - ひろば ${name}`;
+                urlElem.textContent = `hiroba.japan-vi.be/index.html?board=${encodeURIComponent(this.state.currentUser.managerId)}`;
+            } else {
+                titleElem.textContent = "ひろば";
+                urlElem.textContent = "hiroba.japan-vi.be/";
+            }
         }
 
         const addCardBtn = document.getElementById("addCardBtn");
         const adminaccountActions = document.getElementById("adminaccountActions");
         const corkboard = document.getElementById("corkboard");
 
-        if (this.state.isManager) {
-            addCardBtn.style.display = "inline-flex";
-            adminaccountActions.style.display = "flex";
-            corkboard.classList.remove("read-only");
-        } else {
-            addCardBtn.style.display = "none";
-            adminaccountActions.style.display = "none";
-            corkboard.classList.add("read-only");
+        if (addCardBtn && adminaccountActions && corkboard) {
+            if (this.state.isManager) {
+                addCardBtn.style.display = "inline-flex";
+                adminaccountActions.style.display = "flex";
+                corkboard.classList.remove("read-only");
+            } else {
+                addCardBtn.style.display = "none";
+                adminaccountActions.style.display = "none";
+                corkboard.classList.add("read-only");
+            }
         }
     },
 
     renderBoard() {
         const corkboard = document.getElementById("corkboard");
+        if (!corkboard) return;
         corkboard.innerHTML = "";
 
         this.state.cards.forEach(card => {
@@ -440,28 +486,35 @@ const App = {
 
     openCardModal() {
         if (!this.state.isManager) return;
-        document.getElementById("cardModal").classList.add("active");
+        const modal = document.getElementById("cardModal");
+        if (modal) modal.classList.add("active");
     },
 
     closeCardModal() {
-        document.getElementById("cardModal").classList.remove("active");
-        document.getElementById("cardText").value = "";
-        document.getElementById("cardImageUrl").value = "";
+        const modal = document.getElementById("cardModal");
+        if (modal) modal.classList.remove("active");
+        const cardText = document.getElementById("cardText");
+        const cardImg = document.getElementById("cardImageUrl");
+        if (cardText) cardText.value = "";
+        if (cardImg) cardImg.value = "";
     },
 
     openViewModal(card) {
         const container = document.getElementById("viewModalContent");
+        if (!container) return;
         let html = "";
         if (card.imageUrl) {
             html += `<img src="${this.escapeHtml(card.imageUrl)}" style="width:100%; max-height:300px; object-fit:contain; border-radius:8px; margin-bottom:15px;" alt="添付画像" onerror="this.style.display='none'">`;
         }
         html += `<p style="font-size:16px; line-height:1.6; white-space:pre-wrap;">${this.escapeHtml(card.text || '')}</p>`;
         container.innerHTML = html;
-        document.getElementById("viewModal").classList.add("active");
+        const viewModal = document.getElementById("viewModal");
+        if (viewModal) viewModal.classList.add("active");
     },
 
     closeViewModal() {
-        document.getElementById("viewModal").classList.remove("active");
+        const viewModal = document.getElementById("viewModal");
+        if (viewModal) viewModal.classList.remove("active");
     },
 
     handleDragStart(e) {
@@ -485,6 +538,7 @@ const App = {
         if (!this.state.draggedCardId || !this.state.isManager) return;
 
         const corkboard = document.getElementById("corkboard");
+        if (!corkboard) return;
         const boardRect = corkboard.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -533,8 +587,6 @@ const App = {
         });
     }
 };
-
-window.App = App;
 
 window.addEventListener("DOMContentLoaded", () => {
     App.init();
