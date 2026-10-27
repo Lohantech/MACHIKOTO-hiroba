@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="canonical" href="https://hiroba.japan-vi.be/index">
-    <link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -69,6 +69,19 @@
                         <span class="toggle-link" onclick="App.toggleRegisterView(true)">新規登録はこちら</span>
                         <span class="toggle-link" onclick="App.toggleResetView(true)">パスワードを忘れた場合</span>
                     </div>
+
+                    <!-- Welcome message: only inside the login block, so it is hidden on the register and reset screens -->
+                    <div class="welcome-box">
+                        <p class="welcome-title">MACHIKOTO ひろばへようこそ！</p>
+                        <p class="welcome-text">当サービスでは、メールアドレスや個人情報を一切必要としません。お好きなユーザー名（ID）やページタイトルを設定するだけで、誰でも自由に自分だけの可愛い空間を作ることができます。</p>
+
+                        <div class="welcome-note">
+                            <p class="welcome-note-title">🔒 日本国内限定（ジオブロック対応）の安心空間</p>
+                            <p class="welcome-text">「ひろば」をはじめとするMACHIKOTOのすべてのサービスは、日本国内限定の特別なエクスクルーシブ空間です。データはすべて大阪に拠点を置くサーバー（大阪サーバー）にて安全に管理されており、海外からのアクセスやダウンロードは自動的に制限され、安全な環境が守られています。</p>
+                        </div>
+
+                        <p class="welcome-text">このスマートフォンの上で、大好きなウィジェット or カラー、テキストを組み合わせて、あなたの自由な創造力をいっぱいに広げてくださいね。心ときめく素敵な空間づくりをお楽しみください 💖</p>
+                    </div>
                 </div>
 
                 <div id="registerFormBlock" style="display: none;">
@@ -109,19 +122,6 @@
                         <button type="submit" class="btn btn-blue">パスワードを変更</button>
                     </form>
                     <span class="toggle-link" onclick="App.toggleResetView(false)">ログイン画面に戻る</span>
-                </div>
-
-                <!-- Welcome message: shared by the login, register and reset screens, shown below their buttons -->
-                <div class="welcome-box">
-                    <p class="welcome-title">MACHIKOTO ひろばへようこそ！</p>
-                    <p class="welcome-text">当サービスでは、メールアドレスや個人情報を一切必要としません。お好きなユーザー名（ID）やページタイトルを設定するだけで、誰でも自由に自分だけの可愛い空間を作ることができます。</p>
-
-                    <div class="welcome-note">
-                        <p class="welcome-note-title">🔒 日本国内限定（ジオブロック対応）の安心空間</p>
-                        <p class="welcome-text">「ひろば」をはじめとするMACHIKOTOのすべてのサービスは、日本国内限定の特別なエクスクルーシブ空間です。データはすべて大阪に拠点を置くサーバー（大阪サーバー）にて安全に管理されており、海外からのアクセスやダウンロードは自動的に制限され、安全な環境が守られています。</p>
-                    </div>
-
-                    <p class="welcome-text">このスマートフォンの上で、大好きなウィジェット or カラー、テキストを組み合わせて、あなたの自由な創造力をいっぱいに広げてくださいね。心ときめく素敵な空間づくりをお楽しみください 💖</p>
                 </div>
             </div>
         </div>

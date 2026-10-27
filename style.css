@@ -291,7 +291,7 @@ main {
     padding-bottom: 10px;
 }
 
-/* Welcome message shown below the buttons on the login / register / reset screens */
+/* Welcome message shown below the buttons on the login screen only */
 .welcome-box {
     background: var(--bg-light-blue);
     border: 1.5px solid var(--border-subtle);
