@@ -61,7 +61,6 @@
 }
 
 html, body {
-  height: 100%;
   margin: 0;
   padding: 0;
   background: var(--bg-body);
@@ -69,23 +68,32 @@ html, body {
   overflow-x: hidden;
 }
 
-.homu {
+/* Only html has a fixed height; body grows with its content (min-height below),
+   so the footer always sits at the very bottom without extra empty space */
+html {
   height: 100%;
-  margin: 0;
-  padding: 0;
-  background: var(--gradient-honu);
-  color: var(--text-main);
-  overflow-x: hidden;
+}
 
+/* ========================================================
+   "HOMU" BACKGROUND
+   Only shown on the gateway screens (login, register,
+   forgot password). As soon as the board screen with the
+   smartphone is active, the regular body background returns.
+   ======================================================== */
+body:has(#gatewayScreen.active) {
+  background: var(--gradient-honu);
   background-size: 400% 400%;
   animation: brumeMagique 25s ease infinite;
   position: relative;
+  overflow-x: hidden;
 }
 
-.homu::before,
-.homu::after {
+/* Floating blurred clouds */
+body:has(#gatewayScreen.active)::before,
+body:has(#gatewayScreen.active)::after {
   content: "";
-  position: absolute;
+  /* fixed: the clouds no longer extend the page height (no empty scroll area below the footer) */
+  position: fixed;
   width: 600px;
   height: 600px;
   border-radius: 50%;
@@ -95,17 +103,24 @@ html, body {
   z-index: 0; 
 }
 
-.homu::before {
+body:has(#gatewayScreen.active)::before {
   top: -10%;
   left: -10%;
   animation: flottaisonNuageUn 30s ease-in-out infinite alternate;
 }
 
-.homu::after {
+body:has(#gatewayScreen.active)::after {
   bottom: -10%;
   right: -10%;
   animation: flottaisonNuageDeux 35s ease-in-out infinite alternate;
 }
+
+/* Keep the page content above the clouds */
+header, main, #footer, .account {
+  position: relative;
+  z-index: 1;
+}
+
 @keyframes brumeMagique {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -276,6 +291,54 @@ main {
     padding-bottom: 10px;
 }
 
+/* Welcome message shown below the buttons on the login / register / reset screens */
+.welcome-box {
+    background: var(--bg-light-blue);
+    border: 1.5px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    margin-top: 20px;
+    text-align: left;
+    color: var(--text-time);
+}
+
+.welcome-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+    text-align: center;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.welcome-text {
+    font-size: 12px;
+    line-height: 1.8;
+    word-break: break-word;
+}
+
+.welcome-text + .welcome-text,
+.welcome-note + .welcome-text {
+    margin-top: 10px;
+}
+
+/* Highlighted sub-section (geo-block notice) */
+.welcome-note {
+    background: rgba(255, 255, 255, 0.75);
+    border-left: 4px solid #D6B3FF;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 10px;
+}
+
+.welcome-note-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
 .form-group {
     margin-bottom: 15px;
     text-align: left;
@@ -378,8 +441,8 @@ main {
 
 .smartphone-container {
     position: relative;
-    /* Proportions fixes 400:750 sur tous les écrans.
-       La largeur s'adapte à la fois à la largeur ET à la hauteur disponibles. */
+    /* Fixed 400:750 proportions on every screen.
+       The width adapts to both the available width AND height. */
     width: min(400px, calc(100vw - 16px), calc((100dvh - 230px) * 0.5333));
     min-width: 260px;
     aspect-ratio: 400 / 750;
@@ -422,7 +485,7 @@ main {
     position: absolute;
     inset: 0;
     overflow: hidden;
-    /* Permet d'utiliser des unités cqw : tout le contenu se met à l'échelle avec le faux téléphone */
+    /* Enables cqw units: all content scales together with the fake phone */
     container-type: size;
 }
 
@@ -757,7 +820,7 @@ main {
 }
 
 /* ========================================================
-   RESPONSIVE – largeurs de contrôles et navbar
+   RESPONSIVE – control widths and navbar
    ======================================================== */
 
 .board-controls-wallpaper,
@@ -771,7 +834,7 @@ main {
 
 img, canvas { max-width: 100%; }
 
-/* Tablette (iPad portrait, ~768px) */
+/* Tablet (iPad portrait, ~768px) */
 @media screen and (max-width: 900px) {
     header { padding: 8px 10px; }
 
@@ -788,7 +851,7 @@ img, canvas { max-width: 100%; }
     #nav-datetime { flex: 0 0 auto; }
     #nav-time { font-size: 20px; letter-spacing: 1px; }
 
-    /* Le nom passe sur sa propre ligne, centré */
+    /* The name goes on its own line, centered */
     #nav-username {
         order: 3;
         flex: 1 1 100%;
@@ -814,7 +877,7 @@ img, canvas { max-width: 100%; }
 
     .gateway-card { padding: 18px 14px; }
     .gateway-card h2 { font-size: 16px; }
-    .form-control { font-size: 16px; } /* évite le zoom automatique d'iOS */
+    .form-control { font-size: 16px; } /* prevents iOS auto-zoom */
 
     .theme-bar { gap: 8px; font-size: 12px; }
 
@@ -835,7 +898,7 @@ img, canvas { max-width: 100%; }
     .account .btn { flex: 1 1 100%; }
 }
 
-/* Paysage téléphone : on réduit la hauteur réservée au-dessus du faux téléphone */
+/* Phone in landscape: reduce the height reserved above the fake phone */
 @media screen and (max-height: 500px) and (orientation: landscape) {
     .smartphone-container {
         width: min(400px, calc(100vw - 16px), calc((100dvh - 60px) * 0.5333));
@@ -843,9 +906,9 @@ img, canvas { max-width: 100%; }
     }
 }
 
-/* Vrai téléphone : le faux smartphone disparaît, le tableau épouse l'écran bord à bord.
-   Les proportions 400:750 sont conservées (les widgets restent au même endroit),
-   la page défile verticalement si besoin. */
+/* Real phone: the fake smartphone frame disappears and the board fills the screen edge to edge.
+   The 400:750 proportions are kept (widgets stay in the same place),
+   and the page scrolls vertically if needed. */
 @media screen and (max-width: 480px) {
     main { padding-left: 0; padding-right: 0; }
 
@@ -860,4 +923,28 @@ img, canvas { max-width: 100%; }
         border-radius: 0;
         box-shadow: none;
     }
+}
+
+/* ========================================================
+   VIEWER MODE (share link)
+   Only the smartphone is shown: no tools, no account buttons.
+   The class is toggled on <body> by render() in ui.js.
+   ======================================================== */
+body.viewer-mode .theme-bar,
+body.viewer-mode .board-controls-wallpaper,
+body.viewer-mode .board-controls,
+body.viewer-mode #adminaccountActions,
+body.viewer-mode #urlContainer {
+  display: none !important;
+}
+
+/* More room available, so the phone can be bigger */
+body.viewer-mode .smartphone-container {
+  width: min(400px, calc(100vw - 16px), calc((100dvh - 150px) * 0.5333));
+}
+
+@media screen and (max-width: 480px) {
+  body.viewer-mode .smartphone-container {
+    width: 100%;
+  }
 }
