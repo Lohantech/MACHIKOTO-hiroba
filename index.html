@@ -2,125 +2,263 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>MACHIKOTO - ひろば</title>
     <link rel="icon" type="image/png" href="gazo/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="canonical" href="https://hiroba.japan-vi.be/index">
-    <link rel="stylesheet" href="style.css?v=1">
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
-    <header>
-        <div id="nav-bar">
-            <a href="https://wahoo.japan-vi.be" id="nav-logo">
-                <img src="gazo/logo.svg" alt="MACHIKOTO - ひろば" id="logo"
-                    onerror="this.style.display='none';document.getElementById('appTitle').style.display='flex'">
-            </a>
+<header>
+  <!-- Navigation bar container -->
+  <div id="nav-bar">
+    <div class="nav-branding">
+      <a href="https://wahoo.japan-vi.be/" id="nav-logo">
+        <img src="gazo/logo.svg" alt="Wahoo! Japan" id="logo"
+          onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+        <div id="logo-fallback">M!</div>
+      </a>
 
-            <a href="index.html" id="nav-logo">
-                <img id="appTitle" id="logo"
-                    onerror="this.style.display='none';document.getElementById('appTitle').style.display='flex'">
-                <span class="brand-title">ひろば</span>
-            </a>
-        </div>
-        <div class="url-bar" id="urlDisplay">hiroba.japan-vi.be/</div>
-    </header>
+      <a href="https://hiroba.japan-vi.be/" id="nav-hiroba">
+        <img src="gazo/hiroba.png" alt="Hiroba" id="logo-hiroba"
+          onerror="this.style.display='none';document.getElementById('logo-fallback-h').style.display='flex'">
+        <div id="logo-fallback-h">H!</div>
+      </a>
+    </div>
 
-    <main>
-        <section id="gatewayScreen" class="screen active">
-            <div class="gateway-grid">
-                <div class="gateway-card">
-                    <div id="loginFormBlock">
-                        <h2>MACHIKOTO - ひろば アカウントにログイン</h2>
-                        <form onsubmit="App.handleLogin(event)">
-                            <div class="form-group">
-                                <label for="loginId">ID</label>
-                                <input type="text" id="loginId" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="loginPassword">パスワード</label>
-                                <input type="password" id="loginPassword" class="form-control" required>
-                            </div>
-                            <button type="submit" class="btn btn-blue">ログイン</button>
-                        </form>
+    <!-- Center user name display -->
+    <div id="nav-username"></div>
+
+    <!-- Date and time display -->
+    <div id="nav-datetime">
+      <div id="nav-time">00:00</div>
+      <div id="nav-date"></div>
+    </div>
+  </div>
+
+  <!-- URL display and share/user action buttons -->
+  <div style="display: flex; align-items: center; gap: 11px; margin-top: 8px;" id="urlContainer">
+      <div class="url-bar" id="urlDisplay" style="flex: 1; margin-top: 0;">hiroba.japan-vi.be/</div>
+      <button class="btn btn-kawaii" id="copyShareBtn" onclick="App.copyShareLink()" style="display:none; height:34px; font-size:12px; padding:0 10px; width:auto; white-space:nowrap;">コピー</button>
+      <button class="btn btn-secondary" id="changeUserNameBtn" onclick="App.openUserNameModal()" style="display:none; height:34px; font-size:12px; padding:0 10px; width:auto; white-space:nowrap;">ユーザー名を変更</button>
+  </div>
+</header>
+
+<main>
+    <!-- Gateway screen -->
+    <section id="gatewayScreen" class="screen active">
+        <div class="gateway-grid">
+            <div class="gateway-card">
+                <div id="loginFormBlock">
+                    <h2>MACHIKOTO - ひろば ログイン</h2>
+                    <form onsubmit="App.handleLogin(event)">
+                        <div class="form-group">
+                            <label for="loginId">ID</label>
+                            <input type="text" id="loginId" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">パスワード</label>
+                            <input type="password" id="loginPassword" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-blue">ログイン</button>
+                    </form>
+                    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
                         <span class="toggle-link" onclick="App.toggleRegisterView(true)">新規登録はこちら</span>
-                    </div>
-
-                    <div id="registerFormBlock" style="display: none;">
-                        <h2>管理者 新規登録</h2>
-                        <form onsubmit="App.handleRegister(event)">
-                            <div class="form-group">
-                                <label for="regId">カスタムID</label>
-                                <input type="text" id="regId" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="regPassword">パスワード</label>
-                                <input type="password" id="regPassword" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="regName">名前を入力してください (例 : 市町村、プロジェクト、県など)</label>
-                                <input type="text" id="regName" class="form-control" placeholder="例 : ワフー" required>
-                            </div>
-                            <button type="submit" class="btn btn-green">アカウントを作成</button>
-                        </form>
-                        <span class="toggle-link" onclick="App.toggleRegisterView(false)">ログイン画面に戻る</span>
+                        <span class="toggle-link" onclick="App.toggleResetView(true)">パスワードを忘れた場合</span>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <section id="boardScreen" class="screen">
-            <div class="board-controls">
-                <button class="btn btn-green" id="addCardBtn" style="max-width: 200px;" onclick="App.openCardModal()">＋ カード追加</button>
-                <button class="btn btn-blue" id="switchRoleBtn" style="max-width: 220px;" onclick="App.switchToGateway()">トップ画面へ戻る</button>
-            </div>
-
-            <div class="corkboard-container" id="corkboard"></div>
-
-            <div class="account" id="adminaccountActions">
-                <button class="btn btn-danger" onclick="App.clearAllCards()">すべてのカードを消去</button>
-                <button class="btn btn-danger" onclick="App.deleteAccount()">アカウントを削除</button>
-            </div>
-        </section>
-    </main>
-
-    <div class="modal-overlay" id="cardModal">
-        <div class="modal-content">
-            <div class="modal-title">新しいカードを追加</div>
-            <form onsubmit="App.handleSaveCard(event)">
-                <div class="form-group">
-                    <label for="cardText">メッセージ内容</label>
-                    <textarea id="cardText" class="form-control" rows="4" required></textarea>
+                <div id="registerFormBlock" style="display: none;">
+                    <h2>管理者 新規登録</h2>
+                    <form onsubmit="App.handleRegister(event)">
+                        <div class="form-group">
+                            <label for="regId">カスタムID</label>
+                            <input type="text" id="regId" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regPassword">パスワード</label>
+                            <input type="password" id="regPassword" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regName">名前を入力してください (例 : 市町村、プロジェクト、県など)</label>
+                            <input type="text" id="regName" class="form-control" placeholder="例 : ワフー" required>
+                        </div>
+                        <button type="submit" class="btn btn-green">アカウントを作成</button>
+                    </form>
+                    <span class="toggle-link" onclick="App.toggleRegisterView(false)">ログイン画面に戻る</span>
                 </div>
-                <div class="form-group">
-                    <label for="cardImageUrl">画像のURLリンク（任意）</label>
-                    <input type="url" id="cardImageUrl" class="form-control" placeholder="https://example.com/image.jpg">
-                </div>
-                <div class="modal-buttons">
-                    <button type="button" class="btn btn-secondary" onclick="App.closeCardModal()">キャンセル</button>
-                    <button type="submit" class="btn btn-green">追加する</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <div class="modal-overlay" id="viewModal">
-        <div class="modal-content">
-            <div class="modal-title">カードの詳細</div>
-            <div id="viewModalContent"></div>
-            <div class="modal-buttons" style="margin-top: 20px;">
-                <button type="button" class="btn btn-blue" onclick="App.closeViewModal()">閉じる</button>
+                <div id="resetFormBlock" style="display: none;">
+                    <h2>パスワード再設定</h2>
+                    <form onsubmit="App.handleResetPassword(event)">
+                        <div class="form-group">
+                            <label for="resetId">ID</label>
+                            <input type="text" id="resetId" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="resetCode">6桁のリカバリーコード</label>
+                            <input type="text" id="resetCode" class="form-control" maxlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="resetNewPassword">新しいパスワード (6文字以上)</label>
+                            <input type="password" id="resetNewPassword" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-blue">パスワードを変更</button>
+                    </form>
+                    <span class="toggle-link" onclick="App.toggleResetView(false)">ログイン画面に戻る</span>
+                </div>
             </div>
         </div>
+    </section>
+
+    <!-- Board screen -->
+    <section id="boardScreen" class="screen">
+        <!-- Theme & Wallpaper Controls -->
+        <div class="theme-bar">
+            <span>🎨テーマ:</span>
+            <button class="theme-btn theme-pink" onclick="App.setTheme('theme-pastel-pink')" title="Pastel Pink"></button>
+            <button class="theme-btn theme-blue" onclick="App.setTheme('theme-sky-blue')" title="Sky Blue"></button>
+            <button class="theme-btn theme-y2k" onclick="App.setTheme('theme-y2k-gradient')" title="Y2K Gradient"></button>
+
+            <div id="customThemeContainer" style="display: flex; gap: 8px; align-items: center;"></div>
+            <button class="btn-color-picker" onclick="App.openColorWheelModal()" title="カスタムカラー作成">🌈カラーを作成</button>
+            <button class="btn-toggle-delete" id="toggleDeleteBtn" onclick="App.toggleDeleteCircleMode()" title="削除モード">🗑️</button>
+        </div>
+        
+        <!-- Wallpaper File Upload Button -->
+        <div class="board-controls-wallpaper" style="margin-bottom: 12px; text-align: center;">
+            <label for="wallFile" class="btn btn-love" style="cursor: pointer;">
+                💖背景画像を追加 (GIF・WebP対応)
+            </label>
+            <input type="file" id="wallFile" accept="image/*" style="display: none;" onchange="App.setCustomWallpaper()">
+        </div>
+
+        <!-- Add Widget Button placed right below the wallpaper controls -->
+        <div class="board-controls" id="boardControls">
+            <button class="btn btn-green" id="addCardBtn" onclick="App.openCardModal()">＋ ウィジェット追加</button>
+        </div>
+                       
+        <!-- Smartphone Wrapper (Keeps identical fixed proportions across PC, iPad, and Mobile) -->
+        <div class="phone-wrapper">
+            <div class="smartphone-container theme-pastel-pink" id="smartphoneContainer">
+                <div class="corkboard-container" id="corkboard"></div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Modals -->
+<div class="modal-overlay" id="cardModal">
+    <div class="modal-content">
+        <div class="modal-title">新しいウィジェットを追加</div>
+        <form onsubmit="App.handleSaveCard(event)">
+            <div class="form-group">
+                <label for="cardText">メッセージ・文字（任意）</label>
+                <textarea id="cardText" class="form-control" rows="4" placeholder="メモやメッセージを入力してください"></textarea>
+            </div>
+            <div class="modal-group">
+                <label>画像をアップロード（任意 / GIF・WebPアニメ対応）</label>
+                <div class="file-upload-wrapper">
+                    <label for="cardImageFile" class="file-upload-btn">画像を選択＝＞</label>
+                    <span id="fileNameDisplay" class="file-name-display">選択されていません</span>
+                    <input type="file" id="cardImageFile" accept="image/*" onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : '選択されていません'">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn btn-secondary" onclick="App.closeCardModal()">キャンセル</button>
+                <button type="submit" class="btn btn-green">追加する</button>
+            </div>
+        </form>
     </div>
-      
-    <footer id="footer">
-        <span id="f-left" data-t="footerLeft">2025 - 2026 © MACHIKOTO - ひろば — あなたのプライバシーを尊重します。いつでもデフォルトに戻せます。詳細はこちら：</span>
-        <span></span>
-        <a href="https://help.japan-vi.be" id="f-right" data-t="footerRight">❓ヘルプ</a>
-    </footer>
 </div>
 
-    <script type="module" src="script.js"></script>
+<div class="modal-overlay" id="viewModal">
+    <div class="modal-content">
+        <div class="modal-title">ウィジェットの詳細</div>
+        <div id="viewModalContent"></div>
+        <div class="modal-buttons" style="margin-top: 20px;">
+            <button type="button" class="btn btn-blue" onclick="App.closeViewModal()">閉じる</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="userNameModal">
+    <div class="modal-content">
+        <div class="modal-title">ユーザー名の変更</div>
+        <p style="font-size:13px; color:#666; margin-bottom:12px; line-height:1.5;">※ 表示されるユーザー名を変更します。ログインIDは変更されません。</p>
+        <form onsubmit="App.handleSaveUserName(event)">
+            <div class="form-group">
+                <label for="newUserName">新しいユーザー名</label>
+                <input type="text" id="newUserName" class="form-control" required>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn btn-secondary" onclick="App.closeUserNameModal()">キャンセル</button>
+                <button type="submit" class="btn btn-green">保存する</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<dialog id="colorPickerModal" class="custom-color-modal">
+    <div class="modal-content-custom">
+        <h3 style="margin-bottom: 10px; font-size: 15px;">背景カラーの作成</h3>
+        <div class="color-mode-toggle">
+            <label><input type="radio" name="colorMode" value="single" checked onchange="App.changeColorMode('single')"> 単色</label>
+            <label><input type="radio" name="colorMode" value="gradient2" onchange="App.changeColorMode('gradient2')"> 2色グラデ</label>
+            <label><input type="radio" name="colorMode" value="gradient3" onchange="App.changeColorMode('gradient3')"> 3色グラデ</label>
+        </div>
+
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <div class="wheel-container">
+                <p style="font-size: 11px; margin-bottom: 2px;">色 1</p>
+                <canvas id="colorWheel1" width="105" height="105"></canvas>
+            </div>
+            <div class="wheel-container" id="wheelGroup2" style="display: none;">
+                <p style="font-size: 11px; margin-bottom: 2px;">色 2</p>
+                <canvas id="colorWheel2" width="105" height="105"></canvas>
+            </div>
+            <div class="wheel-container" id="wheelGroup3" style="display: none;">
+                <p style="font-size: 11px; margin-bottom: 2px;">色 3</p>
+                <canvas id="colorWheel3" width="105" height="105"></canvas>
+            </div>
+        </div>
+
+        <div id="angleGroup" style="display: none; margin-top: 6px;">
+            <label style="font-size: 11px;">方向: </label>
+            <select id="gradientAngle" style="padding: 2px 6px; font-size: 11px;" onchange="App.updatePreviewBox()">
+                <option value="135deg">斜め (135°)</option>
+                <option value="180deg">上から下 (180°)</option>
+                <option value="90deg">左から右 (90°)</option>
+            </select>
+        </div>
+
+        <div style="margin-top: 8px; text-align: left;">
+            <label style="font-size: 11px;">透明度: <span id="opacityVal">100%</span></label>
+            <input type="range" id="colorOpacity" min="0.1" max="1" step="0.05" value="1" style="width: 100%;" oninput="App.updatePreviewBox(); document.getElementById('opacityVal').textContent = Math.round(this.value * 100) + '%'">
+        </div>
+
+        <div id="colorPreviewBox" class="color-preview-box"></div>
+
+        <div class="modal-buttons" style="margin-top: 12px;">
+            <button type="button" class="btn btn-secondary" onclick="App.closeColorWheelModal()">キャンセル</button>
+            <button type="button" class="btn btn-green" onclick="App.saveCustomColorCircle()">保存する</button>
+        </div>
+    </div>
+</dialog>
+
+<footer id="footer">
+    <span id="f-left">2025 - 2026 © MACHIKOTO - ひろば — あなたのプライバシーを尊重します。いつでもデフォルトに戻せます。詳細はこちら：</span>
+    <a href="https://help.japan-vi.be" id="f-right">❓ヘルプ</a>
+</footer>
+<div class="account" id="adminaccountActions">
+    <button class="btn btn-blue" id="switchRoleBtn" onclick="App.switchToGateway()">ログアウト</button>
+    <button class="btn btn-danger" onclick="App.clearAllCards()">すべてのウィジェットを消去</button>
+    <button class="btn btn-danger" onclick="App.deleteAccount()">アカウントを削除</button>
+</div>
+
+<script type="module" src="./src/main.js"></script>
 </body>
 </html>
