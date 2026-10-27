@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { db } from './firebase.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { subscribeToRealtimeCards } from './cards.js';
-import { loadUserWallpaper } from './wallpaper.js';
+import { loadUserWallpaper, resetWallpaper } from './wallpaper.js';
 
 export function initClock() {
     const updateHeaderClock = () => {
@@ -52,6 +52,10 @@ export function switchToGateway() {
     state.isReadOnly = false;
     state.cards = [];
 
+    // Clear the previous user's wallpaper so it never carries over to the next account
+    resetWallpaper();
+
+    // render() also removes the viewer-mode class from <body>
     render();
 
     const gatewayScreen = document.getElementById("gatewayScreen");
@@ -75,6 +79,9 @@ function renderBoardInternal() {
 }
 
 export function render() {
+    // Viewer mode (share link): hides all tools and account buttons, only the phone remains
+    document.body.classList.toggle("viewer-mode", state.isReadOnly && !state.isManager);
+
     const urlElem = document.getElementById("urlDisplay");
     const copyBtn = document.getElementById("copyShareBtn");
     const changeUserNameBtn = document.getElementById("changeUserNameBtn");
@@ -123,6 +130,7 @@ export async function checkUrlParams() {
     const boardParam = urlParams.get('board');
 
     if (boardParam) {
+        // Share link: read-only mode, even if a manager session exists in this browser
         state.isManager = false;
         state.isReadOnly = true;
 

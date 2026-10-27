@@ -20,7 +20,16 @@ const App = {
     init() {
         this.bindEvents();
         initClock();
-        
+
+        // A share link (?board=...) always takes priority over a saved session,
+        // so the owner can test their own link in the same browser
+        const boardParam = new URLSearchParams(window.location.search).get("board");
+        if (boardParam) {
+            checkUrlParams();
+            return;
+        }
+
+        // No share link: restore the saved session (persistent login)
         const savedUser = localStorage.getItem("machikoto_current_user");
         if (savedUser) {
             try {

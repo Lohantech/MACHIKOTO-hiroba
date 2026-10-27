@@ -3,6 +3,7 @@ import { db } from './firebase.js';
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const MAX_WALLPAPERS = 10;
+const DEFAULT_THEME = 'theme-pastel-pink';
 
 // Selected colors storage
 let selectedColor1 = '#ffffff';
@@ -16,6 +17,19 @@ export function setTheme(themeName) {
         container.style.background = '';
         container.className = `smartphone-container ${themeName}`;
     }
+}
+
+// Clears everything related to the previous user's wallpaper (background, saved circles, theme).
+// Must run on logout and before loading another account, so backgrounds are never shared between users.
+export function resetWallpaper() {
+    state.customWallpapers = [];
+    state.isDeleteCircleMode = false;
+
+    const deleteBtn = document.getElementById("toggleDeleteBtn");
+    if (deleteBtn) deleteBtn.classList.remove("active");
+
+    setTheme(DEFAULT_THEME);
+    renderCustomWallpaperCircles();
 }
 
 export function setCustomThemeUrl(urlOrGradient) {
@@ -102,9 +116,16 @@ export async function saveCustomWallpapers() {
 export async function loadUserWallpaper(userId) {
     if (!userId) return;
 
+    // Start from a clean default so nothing from the previous user leaks into this board
+    resetWallpaper();
+
     if (db) {
         try {
             const managerDoc = await getDoc(doc(db, "managers", userId));
+
+            // Ignore a late response if another board was opened in the meantime
+            if (state.activeBoardUserId !== userId) return;
+
             if (managerDoc.exists()) {
                 const data = managerDoc.data();
                 state.customWallpapers = data.customWallpapers || [];
