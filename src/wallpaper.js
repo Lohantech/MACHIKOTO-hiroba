@@ -4,18 +4,72 @@ import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.
 
 const MAX_WALLPAPERS = 10;
 const DEFAULT_THEME = 'theme-pastel-pink';
+const IMGBB_UPLOAD_URL = "https://api.imgbb.com/1/upload?key=c43558f4d66062400d67dd841129fcec";
 
-// Selected colors storage
+// Selected colors storage (color wheel modal)
 let selectedColor1 = '#ffffff';
 let selectedColor2 = '#ffd3e2';
 let selectedColor3 = '#bce9ff';
 
-export function setTheme(themeName) {
+/* ========================================================
+   BACKGROUND APPLY / SAVE
+   - apply* functions only change what is displayed
+   - saveActiveBackground persists the currently active
+     background so the read-only share link can display it
+   ======================================================== */
+
+// Visually applies a built-in theme class (no saving)
+function applyTheme(themeName) {
     state.currentTheme = themeName;
     const container = document.getElementById("smartphoneContainer");
     if (container) {
         container.style.background = '';
         container.className = `smartphone-container ${themeName}`;
+    }
+}
+
+// Called by the theme buttons: applies the theme AND saves it as the active background
+export function setTheme(themeName) {
+    applyTheme(themeName);
+    saveActiveBackground(themeName);
+}
+
+// Visually applies an image URL, a data URI, or a CSS color/gradient (no saving)
+export function setCustomThemeUrl(urlOrGradient) {
+    const container = document.getElementById("smartphoneContainer");
+    if (!container) return;
+
+    if (urlOrGradient.startsWith("http") || urlOrGradient.startsWith("data:")) {
+        container.style.background = `url('${urlOrGradient}')`;
+        container.style.backgroundSize = 'cover';
+        container.style.backgroundPosition = 'center';
+    } else {
+        container.style.background = urlOrGradient;
+    }
+}
+
+// Applies any saved background value: built-in theme name OR image / color / gradient
+function applyActiveBackground(value) {
+    if (typeof value === "string" && value.startsWith("theme-")) {
+        applyTheme(value);
+    } else if (value) {
+        setCustomThemeUrl(value);
+    }
+}
+
+// Persists the active background (only the board owner can write it).
+// Viewers of a share link read this value back in loadUserWallpaper().
+export async function saveActiveBackground(value) {
+    if (!state.isManager || !state.activeBoardUserId) return;
+
+    try {
+        if (db) {
+            await updateDoc(doc(db, "managers", state.activeBoardUserId), { activeBackground: value });
+        } else {
+            localStorage.setItem(`machikoto_active_bg_${state.activeBoardUserId}`, value);
+        }
+    } catch (e) {
+        console.warn("Failed to save active background:", e);
     }
 }
 
@@ -28,22 +82,14 @@ export function resetWallpaper() {
     const deleteBtn = document.getElementById("toggleDeleteBtn");
     if (deleteBtn) deleteBtn.classList.remove("active");
 
-    setTheme(DEFAULT_THEME);
+    // applyTheme (not setTheme) so the default is never written to the database
+    applyTheme(DEFAULT_THEME);
     renderCustomWallpaperCircles();
 }
 
-export function setCustomThemeUrl(urlOrGradient) {
-    const container = document.getElementById("smartphoneContainer");
-    if (container) {
-        if (urlOrGradient.startsWith("http") || urlOrGradient.startsWith("data:")) {
-            container.style.background = `url('${urlOrGradient}')`;
-            container.style.backgroundSize = 'cover';
-            container.style.backgroundPosition = 'center';
-        } else {
-            container.style.background = urlOrGradient;
-        }
-    }
-}
+/* ========================================================
+   CUSTOM WALLPAPER CIRCLES
+   ======================================================== */
 
 export function toggleDeleteCircleMode() {
     state.isDeleteCircleMode = !state.isDeleteCircleMode;
@@ -62,7 +108,7 @@ export function renderCustomWallpaperCircles() {
     state.customWallpapers.forEach((bgValue, index) => {
         const circle = document.createElement("div");
         circle.className = "custom-theme-circle";
-        
+
         if (bgValue.startsWith("http") || bgValue.startsWith("data:")) {
             circle.style.backgroundImage = `url('${bgValue}')`;
         } else {
@@ -70,10 +116,11 @@ export function renderCustomWallpaperCircles() {
         }
 
         circle.title = `カスタム背景 ${index + 1}`;
-        
+
         circle.onclick = () => {
             if (!state.isDeleteCircleMode) {
                 setCustomThemeUrl(bgValue);
+                saveActiveBackground(bgValue);
             }
         };
 
@@ -100,7 +147,7 @@ export async function removeCustomWallpaper(index) {
 
 export async function saveCustomWallpapers() {
     if (!state.activeBoardUserId) return;
-    
+
     if (db) {
         try {
             const managerDocRef = doc(db, "managers", state.activeBoardUserId);
@@ -112,6 +159,10 @@ export async function saveCustomWallpapers() {
         localStorage.setItem(`machikoto_wallpapers_${state.activeBoardUserId}`, JSON.stringify(state.customWallpapers));
     }
 }
+
+/* ========================================================
+   LOADING (owner AND read-only share link)
+   ======================================================== */
 
 export async function loadUserWallpaper(userId) {
     if (!userId) return;
@@ -129,7 +180,12 @@ export async function loadUserWallpaper(userId) {
             if (managerDoc.exists()) {
                 const data = managerDoc.data();
                 state.customWallpapers = data.customWallpapers || [];
-                if (data.wallpaperUrl) {
+
+                if (data.activeBackground) {
+                    // Current background: theme, color, gradient or image
+                    applyActiveBackground(data.activeBackground);
+                } else if (data.wallpaperUrl) {
+                    // Legacy accounts: only the last uploaded image was stored
                     setCustomThemeUrl(data.wallpaperUrl);
                 }
             }
@@ -141,14 +197,20 @@ export async function loadUserWallpaper(userId) {
         if (savedList) {
             state.customWallpapers = JSON.parse(savedList);
         }
-        const savedWallpaper = localStorage.getItem(`machikoto_wallpaper_${userId}`);
-        if (savedWallpaper) {
-            setCustomThemeUrl(savedWallpaper);
+
+        const savedBackground = localStorage.getItem(`machikoto_active_bg_${userId}`)
+            || localStorage.getItem(`machikoto_wallpaper_${userId}`);
+        if (savedBackground) {
+            applyActiveBackground(savedBackground);
         }
     }
 
     renderCustomWallpaperCircles();
 }
+
+/* ========================================================
+   IMAGE WALLPAPER UPLOAD
+   ======================================================== */
 
 export async function setCustomWallpaper() {
     const fileInput = document.getElementById("wallFile");
@@ -167,7 +229,7 @@ export async function setCustomWallpaper() {
         const formData = new FormData();
         formData.append("image", imageFile);
 
-        const response = await fetch("https://api.imgbb.com/1/upload?key=c43558f4d66062400d67dd841129fcec", {
+        const response = await fetch(IMGBB_UPLOAD_URL, {
             method: "POST",
             body: formData
         });
@@ -176,18 +238,20 @@ export async function setCustomWallpaper() {
         if (result && result.success && result.data && result.data.url) {
             const url = result.data.url;
             setCustomThemeUrl(url);
-            
+
             state.customWallpapers.push(url);
             renderCustomWallpaperCircles();
 
             if (db) {
                 const managerDocRef = doc(db, "managers", state.activeBoardUserId);
-                await updateDoc(managerDocRef, { 
-                    wallpaperUrl: url,
+                await updateDoc(managerDocRef, {
+                    wallpaperUrl: url,          // kept for backward compatibility
+                    activeBackground: url,      // read by the share link
                     customWallpapers: state.customWallpapers
                 });
             } else {
                 localStorage.setItem(`machikoto_wallpaper_${state.activeBoardUserId}`, url);
+                localStorage.setItem(`machikoto_active_bg_${state.activeBoardUserId}`, url);
                 await saveCustomWallpapers();
             }
 
@@ -196,13 +260,13 @@ export async function setCustomWallpaper() {
             alert("画像のアップロードに失敗しました。");
         }
     } catch (err) {
-        console.error("BBimage wallpaper upload error:", err);
+        console.error("Wallpaper upload error:", err);
         alert("壁紙アップロード中にエラーが発生しました。");
     }
 }
 
 /* ========================================================
-   COLOR WHEEL & GRADIENT LOGIC (Real-time & up to 3 colors)
+   COLOR WHEEL & GRADIENT LOGIC (real-time, up to 3 colors)
    ======================================================== */
 
 export function openColorWheelModal() {
@@ -247,7 +311,7 @@ export function changeColorMode(mode) {
     updatePreviewBox();
 }
 
-// Draw color wheel with Pointer Events for smooth desktop & mobile interaction
+// Draws a color wheel and wires Pointer Events for smooth desktop & mobile interaction
 function drawColorWheel(canvasId, onColorSelect) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -280,6 +344,7 @@ function drawColorWheel(canvasId, onColorSelect) {
 
         if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
             const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+            // Ignore transparent pixels (outside the wheel)
             if (pixel[3] > 0) {
                 const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1)}`;
                 onColorSelect(hex);
@@ -353,7 +418,9 @@ export async function saveCustomColorCircle() {
 
     const finalBackground = previewBox.style.background;
 
+    // Apply it, store it as the active background (share link), then save it as a circle
     setCustomThemeUrl(finalBackground);
+    saveActiveBackground(finalBackground);
     state.customWallpapers.push(finalBackground);
     renderCustomWallpaperCircles();
     await saveCustomWallpapers();
