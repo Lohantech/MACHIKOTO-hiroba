@@ -2,6 +2,8 @@ import { state } from './state.js';
 import { db } from './firebase.js';
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+console.log("[wallpaper v8] module loaded");
+
 const MAX_WALLPAPERS = 10;
 const DEFAULT_THEME = 'theme-pastel-pink';
 const IMGBB_UPLOAD_URL = "https://api.imgbb.com/1/upload?key=c43558f4d66062400d67dd841129fcec";
@@ -64,12 +66,17 @@ export async function saveActiveBackground(value) {
 
     try {
         if (db) {
-            await updateDoc(doc(db, "managers", state.activeBoardUserId), { activeBackground: value });
+            // wallpaperUrl is also written for non-theme values, because it is the legacy
+            // field older cached copies of this file already know how to display
+            const payload = { activeBackground: value };
+            if (!value.startsWith("theme-")) payload.wallpaperUrl = value;
+            await updateDoc(doc(db, "managers", state.activeBoardUserId), payload);
+            console.log("[wallpaper v8] active background saved:", value);
         } else {
             localStorage.setItem(`machikoto_active_bg_${state.activeBoardUserId}`, value);
         }
     } catch (e) {
-        console.warn("Failed to save active background:", e);
+        console.error("[wallpaper v8] failed to save active background:", e);
     }
 }
 
