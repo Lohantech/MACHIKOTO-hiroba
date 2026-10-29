@@ -68,8 +68,6 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Only html has a fixed height; body grows with its content (min-height below),
-   so the footer always sits at the very bottom without extra empty space */
 html {
   height: 100%;
 }
