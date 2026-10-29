@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { db } from './firebase.js';
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-console.log("[wallpaper v8] module loaded");
+console.log("[wallpaper v9] module loaded");
 
 const MAX_WALLPAPERS = 10;
 const DEFAULT_THEME = 'theme-pastel-pink';
@@ -66,17 +66,15 @@ export async function saveActiveBackground(value) {
 
     try {
         if (db) {
-            // wallpaperUrl is also written for non-theme values, because it is the legacy
-            // field older cached copies of this file already know how to display
-            const payload = { activeBackground: value };
-            if (!value.startsWith("theme-")) payload.wallpaperUrl = value;
-            await updateDoc(doc(db, "managers", state.activeBoardUserId), payload);
-            console.log("[wallpaper v8] active background saved:", value);
+            // Everything (theme name, color, gradient, image) is stored in the single
+            // "wallpaperUrl" field, which is already known to be writable
+            await updateDoc(doc(db, "managers", state.activeBoardUserId), { wallpaperUrl: value });
+            console.log("[wallpaper v9] background saved:", value);
         } else {
             localStorage.setItem(`machikoto_active_bg_${state.activeBoardUserId}`, value);
         }
     } catch (e) {
-        console.error("[wallpaper v8] failed to save active background:", e);
+        console.error("[wallpaper v9] failed to save background:", e);
     }
 }
 
@@ -188,12 +186,11 @@ export async function loadUserWallpaper(userId) {
                 const data = managerDoc.data();
                 state.customWallpapers = data.customWallpapers || [];
 
-                if (data.activeBackground) {
-                    // Current background: theme, color, gradient or image
-                    applyActiveBackground(data.activeBackground);
-                } else if (data.wallpaperUrl) {
-                    // Legacy accounts: only the last uploaded image was stored
-                    setCustomThemeUrl(data.wallpaperUrl);
+                // Current background: theme name, color, gradient or image
+                const savedBackground = data.wallpaperUrl || data.activeBackground;
+                console.log("[wallpaper v9] background loaded:", savedBackground);
+                if (savedBackground) {
+                    applyActiveBackground(savedBackground);
                 }
             }
         } catch (e) {
@@ -252,8 +249,7 @@ export async function setCustomWallpaper() {
             if (db) {
                 const managerDocRef = doc(db, "managers", state.activeBoardUserId);
                 await updateDoc(managerDocRef, {
-                    wallpaperUrl: url,          // kept for backward compatibility
-                    activeBackground: url,      // read by the share link
+                    wallpaperUrl: url,
                     customWallpapers: state.customWallpapers
                 });
             } else {
